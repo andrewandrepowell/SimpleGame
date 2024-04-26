@@ -13,8 +13,13 @@ namespace SimpleGame
         private SpriteBatch _spriteBatch;
         private Texture2D ballTexture;
         private SoundEffectInstance selectSound;
-        private Vector2 ballPosition, ballOrigin, ballDestination, ballStart;
+        private Vector2 ballPosition, ballOrigin, ballDestination, ballStart, ballVelocity, ballPrevPosition;
+        private const float ballGravity = 1f;
+        private const float ballBounce = 0.66f;
+        private const float ballFriction = 0.66f;
+        private float ballTerminalVelocity = 18;
         private float ballRadius;
+        private const float ballFling = 64;
         private const float updateTime = (float)1 / 30;
         private float timeElapsed;
         private Vector2 windowSize;
@@ -75,12 +80,6 @@ namespace SimpleGame
                 selectSound.Play();
             }
 
-            // When the ball is getting dragged, just set the ball's position to that of the mouse.
-            if (ballState == BallStates.Drag)
-            {
-                ballPosition = mousePosition;
-            }
-
             // Conditions to make the ball travel to the specified point.
             if (ballState != BallStates.Travel && 
                 mouseState.RightButton == ButtonState.Pressed)
@@ -93,9 +92,11 @@ namespace SimpleGame
             }
 
             // Conditions to return the ball back to its normal physics state.
-            if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed && travelCount == 0) ||
+            if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed) ||
                 (ballState == BallStates.Drag && mouseState.LeftButton != ButtonState.Pressed))
             {
+                if (ballPosition != ballPrevPosition)
+                    ballVelocity = ballFling * (ballPosition - ballPrevPosition);                    
                 ballState = BallStates.Physics;
             }
 
@@ -104,6 +105,28 @@ namespace SimpleGame
             while (timeElapsed > updateTime)
             {
                 timeElapsed -= updateTime;
+
+                // When physics is enabled, update both velocity and position.
+                if (ballState == BallStates.Physics)
+                {
+                    ballVelocity += new Vector2(0, ballGravity);
+                    if (ballVelocity != Vector2.Zero)
+                    {
+                        var trueMagnitude = ballVelocity.Length();
+                        if (trueMagnitude > ballTerminalVelocity)
+                            ballVelocity = (ballVelocity / trueMagnitude) * ballTerminalVelocity;
+                    }
+                    ballPosition += ballVelocity;
+                }
+
+                // When the ball is getting moved by the user, always remember previous position
+                // to calculate the velocity later.
+                if (ballState == BallStates.Drag || ballState == BallStates.Travel)
+                    ballPrevPosition = ballPosition;
+
+                // When the ball is getting dragged, just set the ball's position to that of the mouse.
+                if (ballState == BallStates.Drag)                                    
+                    ballPosition = mousePosition;                
 
                 // When traveling, simply perform interpolation between the destination and start points.
                 if (ballState == BallStates.Travel)
@@ -114,7 +137,37 @@ namespace SimpleGame
 
                     if (travelCount > 0)
                         travelCount--;
-                }            
+                }
+
+                // Prevent the ball from falling out of the screen.
+                // Update ball velocity such that it bounces at the screen's borders.
+                // Friction is also applied to limit the ball's movement.
+                // This block of code must be last to ensure the draw step
+                // doesn't accidentally draw the ball glitching out of the screen.
+                if (ballPosition.Y + ballRadius > windowSize.Y)
+                {
+                    ballPosition.Y = windowSize.Y - ballRadius;
+                    ballVelocity.Y *= -ballBounce;
+                    ballVelocity.X *= ballFriction;
+                }
+                if (ballPosition.Y - ballRadius < 0)
+                {
+                    ballPosition.Y = ballRadius;
+                    ballVelocity.Y *= -ballBounce;
+                    ballVelocity.X *= ballFriction;
+                }
+                if (ballPosition.X + ballRadius > windowSize.X)
+                {
+                    ballPosition.X = windowSize.X - ballRadius;
+                    ballVelocity.X *= -ballBounce;
+                    ballVelocity.Y *= ballFriction;
+                }
+                if (ballPosition.X - ballRadius < 0)
+                {
+                    ballPosition.X = ballRadius;
+                    ballVelocity.X *= -ballBounce;
+                    ballVelocity.Y *= ballFriction;
+                }
             }
 
             base.Update(gameTime);
