@@ -31,6 +31,7 @@ namespace SimpleGame
         private int travelCount;
         private enum BallStates { Physics, Drag, Travel }
         private BallStates ballState = BallStates.Physics;
+        private readonly static Keys travelKey = Keys.Space;
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -95,7 +96,7 @@ namespace SimpleGame
 
             // Conditions to make the ball travel to the specified point.
             if (ballState != BallStates.Travel && 
-                mouseState.RightButton == ButtonState.Pressed)
+                (mouseState.RightButton == ButtonState.Pressed || keyboardState.IsKeyDown(travelKey)))
             {
                 ballState = BallStates.Travel;
                 ballDestination = mousePosition;
@@ -105,11 +106,13 @@ namespace SimpleGame
             }
 
             // Conditions to return the ball back to its normal physics state.
-            if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed) ||
+            if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed && !keyboardState.IsKeyDown(travelKey)) ||
                 (ballState == BallStates.Drag && mouseState.LeftButton != ButtonState.Pressed))
             {
                 if (ballPosition != ballPrevPosition)
-                    ballVelocity = ballFling * (ballPosition - ballPrevPosition);                    
+                    ballVelocity = ballFling * (ballPosition - ballPrevPosition);
+                else
+                    ballVelocity = Vector2.Zero;
                 ballState = BallStates.Physics;
             }
 
