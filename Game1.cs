@@ -20,8 +20,8 @@ namespace SimpleGame
         private Vector2 windowSize;
         private const int travelTotal = 15;
         private int travelCount;
-        private enum BallStates { Normal, Selected, Travel }
-        private BallStates ballState = BallStates.Normal;
+        private enum BallStates { Physics, Drag, Travel }
+        private BallStates ballState = BallStates.Physics;
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -63,22 +63,25 @@ namespace SimpleGame
             if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
             
-            // Determine mouse position and distance to ball.
+            // Store the mouse position as a vector, since they're more convenient to work with.
             var mousePosition = new Vector2(mouseState.X, mouseState.Y);            
-
-            if (ballState != BallStates.Selected &&
+            
+            // Conditions to enable dragging the ball around.
+            if (ballState != BallStates.Drag &&
                 mouseState.LeftButton == ButtonState.Pressed &&
                 (mousePosition != ballPosition ? Vector2.Distance(mousePosition, ballPosition) : 0) <= ballRadius)
             {
-                ballState = BallStates.Selected;
+                ballState = BallStates.Drag;
                 selectSound.Play();
             }
 
-            if (ballState == BallStates.Selected)
+            // When the ball is getting dragged, just set the ball's position to that of the mouse.
+            if (ballState == BallStates.Drag)
             {
                 ballPosition = mousePosition;
             }
 
+            // Conditions to make the ball travel to the specified point.
             if (ballState != BallStates.Travel && 
                 mouseState.RightButton == ButtonState.Pressed)
             {
@@ -89,17 +92,20 @@ namespace SimpleGame
                 selectSound.Play();
             }
 
+            // Conditions to return the ball back to its normal physics state.
             if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed && travelCount == 0) ||
-                (ballState == BallStates.Selected && mouseState.LeftButton != ButtonState.Pressed))
+                (ballState == BallStates.Drag && mouseState.LeftButton != ButtonState.Pressed))
             {
-                ballState = BallStates.Normal;
+                ballState = BallStates.Physics;
             }
 
+            // Operations that are dependent on time between updates occur in the following blob.
             timeElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
             while (timeElapsed > updateTime)
             {
                 timeElapsed -= updateTime;
 
+                // When traveling, simply perform interpolation between the destination and start points.
                 if (ballState == BallStates.Travel)
                 {
                     var amount = (float)travelCount / travelTotal;
