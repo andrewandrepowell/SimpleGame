@@ -20,7 +20,7 @@ namespace SimpleGame
         private Vector2 windowSize;
         private const int travelTotal = 15;
         private int travelCount;
-        private enum BallStates { Normal, Selected }
+        private enum BallStates { Normal, Selected, Travel }
         private BallStates ballState = BallStates.Normal;
         public Game1()
         {
@@ -64,50 +64,51 @@ namespace SimpleGame
                 Exit();
             
             // Determine mouse position and distance to ball.
-            var mousePosition = new Vector2(mouseState.X, mouseState.Y);
-            var mouseDistanceToBall = (mousePosition != ballPosition ? Vector2.Distance(mousePosition, ballPosition) : 0);
+            var mousePosition = new Vector2(mouseState.X, mouseState.Y);            
 
-            if (ballState == BallStates.Normal &&
+            if (ballState != BallStates.Selected &&
                 mouseState.LeftButton == ButtonState.Pressed &&
-                mouseDistanceToBall <= ballRadius)
+                (mousePosition != ballPosition ? Vector2.Distance(mousePosition, ballPosition) : 0) <= ballRadius)
             {
                 ballState = BallStates.Selected;
-                ballDestination = mousePosition;
-                ballStart = ballPosition;
-                travelCount = travelTotal;
                 selectSound.Play();
             }
 
-            if (ballState == BallStates.Selected &&
-                mouseState.LeftButton == ButtonState.Released)
+            if (ballState == BallStates.Selected)
+            {
+                ballPosition = mousePosition;
+            }
+
+            if (ballState != BallStates.Travel && 
+                mouseState.RightButton == ButtonState.Pressed)
+            {
+                ballState = BallStates.Travel;
+                ballDestination = mousePosition;
+                ballStart = ballPosition;
+                travelCount = travelTotal;                
+                selectSound.Play();
+            }
+
+            if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed && travelCount == 0) ||
+                (ballState == BallStates.Selected && mouseState.LeftButton != ButtonState.Pressed))
             {
                 ballState = BallStates.Normal;
             }
-
-            if (ballState == BallStates.Selected &&
-                mousePosition != ballDestination)
-            {
-                if (mouseDistanceToBall <= ballRadius)
-                    travelCount = travelTotal;
-                ballDestination = mousePosition;
-                ballStart = ballPosition;                
-            }
-
 
             timeElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
             while (timeElapsed > updateTime)
             {
                 timeElapsed -= updateTime;
 
-                if (ballState == BallStates.Selected)
+                if (ballState == BallStates.Travel)
                 {
                     var amount = (float)travelCount / travelTotal;
                     ballPosition.X = MathHelper.SmoothStep(ballDestination.X, ballStart.X, amount);
                     ballPosition.Y = MathHelper.SmoothStep(ballDestination.Y, ballStart.Y, amount);
-                }
 
-                if (travelCount > 0)
-                    travelCount--;
+                    if (travelCount > 0)
+                        travelCount--;
+                }            
             }
 
             base.Update(gameTime);
