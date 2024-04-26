@@ -3,6 +3,10 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
+using System;
+#if DEBUG
+using System.Runtime.InteropServices;
+#endif
 
 
 namespace SimpleGame
@@ -32,8 +36,17 @@ namespace SimpleGame
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+#if DEBUG
+            AllocConsole();
+#endif
+            Console.WriteLine("Hello World!");
         }
-
+#if DEBUG
+        // https://gamedev.stackexchange.com/questions/45107/input-output-console-window-in-xna#:~:text=Right%20click%20your%20game%20in%20the%20solution%20explorer,tab.%20Change%20the%20Output%20Type%20to%20Console%20Application.
+        // This opens a console window in the game.
+        [DllImport("kernel32")]
+        static extern bool AllocConsole();
+#endif
         protected override void Initialize()
         {            
             base.Initialize();
