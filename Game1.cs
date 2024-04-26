@@ -17,9 +17,9 @@ namespace SimpleGame
         private const float ballGravity = 1f;
         private const float ballBounce = 0.66f;
         private const float ballFriction = 0.66f;
-        private float ballTerminalVelocity = 18;
+        private float ballTerminalVelocity = 32;
         private float ballRadius;
-        private const float ballFling = 64;
+        private const float ballFling = 18;
         private const float updateTime = (float)1 / 30;
         private float timeElapsed;
         private Vector2 windowSize;
