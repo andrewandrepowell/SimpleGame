@@ -1,9 +1,18 @@
-﻿using Microsoft.Xna.Framework;
+﻿// MonoGame specific imports.
+// Recall, MonoGame follows the XNA API.
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+
+// Assertions and the Console are utilized
+// from the System.
 using System.Diagnostics;
 using System;
+
+// The following namespace is for opening
+// up a console to view messages while in
+// debug mode.
 #if DEBUG
 using System.Runtime.InteropServices;
 #endif
@@ -13,10 +22,15 @@ namespace SimpleGame
 {
     public class Game1 : Game
     {
+        // MonoGame specific properties.
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Texture2D ballTexture;
         private SoundEffectInstance selectSound;
+
+        // All other properties are there for
+        // making the ball something the user can 
+        // interact with.
         private Vector2 ballPosition, ballOrigin, ballDestination, ballStart, ballVelocity, ballPrevPosition;
         private const float ballGravity = 1f;
         private const float ballBounce = 0.66f;
@@ -42,8 +56,7 @@ namespace SimpleGame
 #endif
             Console.WriteLine("Hello World!");
         }
-#if DEBUG
-        // https://gamedev.stackexchange.com/questions/45107/input-output-console-window-in-xna#:~:text=Right%20click%20your%20game%20in%20the%20solution%20explorer,tab.%20Change%20the%20Output%20Type%20to%20Console%20Application.
+#if DEBUG        
         // This opens a console window in the game.
         [DllImport("kernel32")]
         static extern bool AllocConsole();
@@ -88,7 +101,7 @@ namespace SimpleGame
             // Conditions to enable dragging the ball around.
             if (ballState != BallStates.Drag &&
                 mouseState.LeftButton == ButtonState.Pressed &&
-                (mousePosition != ballPosition ? Vector2.Distance(mousePosition, ballPosition) : 0) <= ballRadius)
+                Vector2.Distance(mousePosition, ballPosition) <= ballRadius)
             {
                 ballState = BallStates.Drag;
                 selectSound.Play();
@@ -109,10 +122,7 @@ namespace SimpleGame
             if ((ballState == BallStates.Travel && mouseState.RightButton != ButtonState.Pressed && !keyboardState.IsKeyDown(travelKey)) ||
                 (ballState == BallStates.Drag && mouseState.LeftButton != ButtonState.Pressed))
             {
-                if (ballPosition != ballPrevPosition)
-                    ballVelocity = ballFling * (ballPosition - ballPrevPosition);
-                else
-                    ballVelocity = Vector2.Zero;
+                ballVelocity = ballFling * (ballPosition - ballPrevPosition);
                 ballState = BallStates.Physics;
             }
 
